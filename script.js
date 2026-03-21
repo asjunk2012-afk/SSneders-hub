@@ -1143,3 +1143,136 @@ async function deleteVideoIdea(ideaId) {
         showNotification('Video idea deleted locally (offline mode)', 'success');
     }
 }
+
+// Link Accounts functionality
+function setupLinkAccountsPage() {
+    // Add event listeners to all connect buttons
+    const connectButtons = document.querySelectorAll('.account-item .btn-primary');
+    
+    connectButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const accountItem = this.closest('.account-item');
+            const accountName = accountItem.querySelector('h4').textContent;
+            const accountIcon = accountItem.querySelector('.account-icon');
+            
+            // Check if already connected
+            if (this.textContent === 'Disconnect') {
+                // Disconnect account
+                disconnectAccount(accountName, this, accountIcon);
+            } else {
+                // Connect account
+                connectAccount(accountName, this, accountIcon);
+            }
+        });
+    });
+}
+
+function connectAccount(accountName, button, icon) {
+    // Show loading state
+    const originalText = button.textContent;
+    button.textContent = 'Connecting...';
+    button.disabled = true;
+    
+    // Simulate OAuth connection (replace with actual OAuth implementation)
+    setTimeout(() => {
+        // Update button state
+        button.textContent = 'Disconnect';
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-secondary');
+        button.disabled = false;
+        
+        // Update icon to show connected state
+        icon.style.border = '3px solid #4CAF50';
+        icon.style.boxShadow = '0 0 10px rgba(76, 175, 80, 0.5)';
+        
+        // Store connection in localStorage
+        const connectedAccounts = JSON.parse(localStorage.getItem('connectedAccounts') || '{}');
+        connectedAccounts[accountName] = {
+            connected: true,
+            connectedAt: new Date().toISOString()
+        };
+        localStorage.setItem('connectedAccounts', JSON.stringify(connectedAccounts));
+        
+        showNotification(`${accountName} connected successfully!`, 'success');
+        
+        // Add connected class for styling
+        button.closest('.account-item').classList.add('connected');
+        
+    }, 1500); // Simulate API call delay
+}
+
+function disconnectAccount(accountName, button, icon) {
+    if (confirm(`Are you sure you want to disconnect ${accountName}?`)) {
+        // Update button state
+        button.textContent = 'Connect';
+        button.classList.remove('btn-secondary');
+        button.classList.add('btn-primary');
+        
+        // Remove connected styling
+        icon.style.border = '';
+        icon.style.boxShadow = '';
+        button.closest('.account-item').classList.remove('connected');
+        
+        // Remove from localStorage
+        const connectedAccounts = JSON.parse(localStorage.getItem('connectedAccounts') || '{}');
+        delete connectedAccounts[accountName];
+        localStorage.setItem('connectedAccounts', JSON.stringify(connectedAccounts));
+        
+        showNotification(`${accountName} disconnected`, 'info');
+    }
+}
+
+// Load connected accounts on page load
+function loadConnectedAccounts() {
+    const connectedAccounts = JSON.parse(localStorage.getItem('connectedAccounts') || '{}');
+    
+    Object.keys(connectedAccounts).forEach(accountName => {
+        const accountItem = Array.from(document.querySelectorAll('.account-item h4'))
+            .find(h4 => h4.textContent === accountName)?.closest('.account-item');
+        
+        if (accountItem) {
+            const button = accountItem.querySelector('.btn-primary, .btn-secondary');
+            const icon = accountItem.querySelector('.account-icon');
+            
+            if (button && icon) {
+                button.textContent = 'Disconnect';
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-secondary');
+                icon.style.border = '3px solid #4CAF50';
+                icon.style.boxShadow = '0 0 10px rgba(76, 175, 80, 0.5)';
+                accountItem.classList.add('connected');
+            }
+        }
+    });
+}
+
+// Initialize Link Accounts page when it's shown
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up Link Accounts page when navigation happens
+    const originalNavigateToPage = window.navigateToPage;
+    
+    window.navigateToPage = function(pageName) {
+        // Call original function
+        if (originalNavigateToPage) {
+            originalNavigateToPage(pageName);
+        }
+        
+        // Setup Link Accounts page if navigating to it
+        if (pageName === 'link-accounts') {
+            setTimeout(() => {
+                setupLinkAccountsPage();
+                loadConnectedAccounts();
+            }, 100);
+        }
+    };
+    
+    // Also setup if Link Accounts is the initial page
+    if (window.currentPage === 'link-accounts') {
+        setTimeout(() => {
+            setupLinkAccountsPage();
+            loadConnectedAccounts();
+        }, 100);
+    }
+});

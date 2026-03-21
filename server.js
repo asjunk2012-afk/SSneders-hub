@@ -7,25 +7,12 @@ const app = express();
 const PORT = 3001;
 const DB_FILE = path.join(__dirname, 'videoIdeas.json');
 
-// Increase payload size limits for large files
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
 // Middleware
 app.use(cors());
+app.use(express.json());
 
-// Serve static files (HTML, CSS, JS, images) with increased limits
-app.use(express.static(__dirname, {
-    maxAge: '1d', // Cache static files for 1 day
-    etag: true,
-    setHeaders: (res, filePath) => {
-        // Set appropriate headers for large files
-        if (filePath.endsWith('.html')) {
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.setHeader('Cache-Control', 'no-cache');
-        }
-    }
-}));
+// Serve static files
+app.use(express.static(__dirname));
 
 // Initialize database file if it doesn't exist
 if (!fs.existsSync(DB_FILE)) {
@@ -126,7 +113,7 @@ app.get('/api/stats', (req, res) => {
     }
 });
 
-// Catch-all route to serve index.html for SPA routing
+// Catch-all handler for client-side routing
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });

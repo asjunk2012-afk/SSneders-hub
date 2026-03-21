@@ -1649,6 +1649,10 @@ body {
     background: linear-gradient(135deg, #00b900 0%, #008800 100%);
 }
 
+.social-card[data-platform="roblox-server"]:hover .social-card-icon {
+    background: linear-gradient(135deg, #00a2ff 0%, #0080cc 100%);
+}
+
 .social-card[data-platform="twitter"]:hover .social-card-icon {
     background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 100%);
 }
@@ -3259,6 +3263,176 @@ input:checked + .slider:before {
     .modal-content {
         width: 95%;
         margin: 20px;
+    }
+}
+
+/* Link Accounts Page Styles */
+.account-links-section {
+    padding: 24px 0;
+}
+
+.account-categories {
+    display: grid;
+    gap: 32px;
+}
+
+.account-category {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+.account-category h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.account-category h3 i {
+    color: var(--primary-color);
+}
+
+.account-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.account-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: var(--bg-primary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-speed);
+}
+
+.account-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--accent-color);
+}
+
+.account-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.account-icon.youtube {
+    background: linear-gradient(135deg, #FF0000 0%, #CC0000 100%);
+}
+
+.account-icon.twitch {
+    background: linear-gradient(135deg, #9146FF 0%, #7B2FF7 100%);
+}
+
+.account-icon.tiktok {
+    background: linear-gradient(135deg, #000000 0%, #FF0050 100%);
+}
+
+.account-icon.twitter {
+    background: linear-gradient(135deg, #1DA1F2 0%, #0D8BD9 100%);
+}
+
+.account-icon.instagram {
+    background: linear-gradient(135deg, #E4405F 0%, #C13584 50%, #833AB4 100%);
+}
+
+.account-icon.facebook {
+    background: linear-gradient(135deg, #1877F2 0%, #0C5FCD 100%);
+}
+
+.account-icon.discord {
+    background: linear-gradient(135deg, #7289DA 0%, #5B6EAE 100%);
+}
+
+.account-icon.roblox {
+    background: linear-gradient(135deg, #00A2FF 0%, #0080CC 100%);
+}
+
+.account-icon.github {
+    background: linear-gradient(135deg, #333333 0%, #24292E 100%);
+}
+
+.account-icon.gitlab {
+    background: linear-gradient(135deg, #FC6D26 0%, #E24329 100%);
+}
+
+.account-info {
+    flex: 1;
+}
+
+.account-info h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.account-info p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+}
+
+/* Responsive Design for Link Accounts */
+@media (max-width: 768px) {
+    .account-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .account-item {
+        padding: 16px;
+    }
+    
+    .account-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .account-category {
+        padding: 20px;
+    }
+    
+    .account-categories {
+        gap: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .account-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    
+    .account-info {
+        width: 100%;
+    }
+    
+    .account-category h3 {
+        justify-content: center;
     }
 }
 
