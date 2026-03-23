@@ -215,9 +215,87 @@ function createIdeaCard(idea) {
     return card;
 }
 
-// Handle video idea form submission
+// Send video idea to Discord webhook
+async function sendToDiscordWebhook(idea) {
+    const webhookUrl = 'https://discord.com/api/webhooks/1485733936238821530/J6380XtFt-rLswF1KGeS223OYJYaV5wOUi_tn_6WZEKMowpKHiowmHiXBGeKdGWjSSJ4';
+    
+    const categoryEmojis = {
+        'gaming': '🎮',
+        'vlog': '📹',
+        'tutorial': '📚',
+        'review': '⭐',
+        'challenge': '🏆',
+        'other': '💡'
+    };
+    
+    const emoji = categoryEmojis[idea.category] || '💡';
+    const categoryLabel = idea.category.charAt(0).toUpperCase() + idea.category.slice(1);
+    
+    const embed = {
+        title: `${emoji} New Video Idea Submitted!`,
+        color: 0xFF69B4, // Pink color to match your site theme
+        fields: [
+            {
+                name: '📝 Title',
+                value: idea.title,
+                inline: false
+            },
+            {
+                name: '📋 Category',
+                value: categoryLabel,
+                inline: true
+            },
+            {
+                name: '👤 Submitted By',
+                value: idea.submitterName || 'Anonymous',
+                inline: true
+            },
+            {
+                name: '📄 Description',
+                value: idea.description,
+                inline: false
+            },
+            {
+                name: '🕐 Submitted At',
+                value: new Date(idea.timestamp).toLocaleString(),
+                inline: true
+            }
+        ],
+        footer: {
+            text: 'SSneder\'s Hub - Video Ideas',
+            icon_url: 'https://i.imgur.com/your-logo.png' // You can replace with your logo
+        },
+        timestamp: new Date().toISOString()
+    };
+    
+    const payload = {
+        embeds: [embed],
+        username: 'SSneder\'s Hub Bot',
+        avatar_url: 'https://i.imgur.com/bot-avatar.png' // You can replace with bot avatar
+    };
+    
+    const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+        throw new Error(`Discord webhook failed: ${response.status}`);
+    }
+    
+    console.log('Video idea sent to Discord successfully');
+}
 async function handleVideoIdeaForm(e) {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) {
+        return; // Already submitting
+    }
     
     const formData = new FormData(e.target);
     const idea = {
@@ -228,13 +306,17 @@ async function handleVideoIdeaForm(e) {
         timestamp: Date.now()
     };
     
-    // Validate form data
-    if (!idea.title || !idea.description || !idea.category) {
-        showNotification('Please fill in all required fields', 'error');
-        return;
-    }
+    // Disable submit button and show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
     
     try {
+        // Validate form data
+        if (!idea.title || !idea.description || !idea.category) {
+            showNotification('Please fill in all required fields', 'error');
+            return;
+        }
+        
         // Save to online database
         const response = await fetch(`${API_BASE_URL}/video-ideas`, {
             method: 'POST',
@@ -247,13 +329,16 @@ async function handleVideoIdeaForm(e) {
         if (response.ok) {
             const result = await response.json();
             
+            // Send to Discord webhook
+            await sendToDiscordWebhook(idea);
+            
             // Reset form
             e.target.reset();
             
             // Show success message
             showNotification('Video idea submitted successfully! Thank you for your contribution!', 'success');
             
-            // Automatically refresh the video ideas list
+            // Automatically refresh video ideas list
             await refreshVideoIdeas();
             
         } else {
@@ -268,14 +353,25 @@ async function handleVideoIdeaForm(e) {
         localStorage.setItem('videoIdeas', JSON.stringify(videoIdeas));
         localStorage.setItem('adminVidIdeas', JSON.stringify(adminVidIdeas));
         
+        // Try to send to Discord webhook even if API fails
+        try {
+            await sendToDiscordWebhook(idea);
+        } catch (discordError) {
+            console.error('Discord webhook also failed:', discordError);
+        }
+        
         // Reset form
         e.target.reset();
         
         showNotification('Video idea submitted locally (offline mode)', 'success');
         
-        // Automatically refresh the video ideas list
+        // Automatically refresh video ideas list
         displayVideoIdeas();
         displayAdminVidIdeas();
+    } finally {
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Idea';
     }
 }
 
