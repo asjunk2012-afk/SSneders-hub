@@ -1534,6 +1534,7 @@ function showDiscordProfile(userData) {
         }
         
         console.log('Avatar URL constructed:', avatarUrl);
+        console.log('User data:', userData);
         
         // Set sidebar avatar with error handling
         avatar.src = avatarUrl;
@@ -1542,13 +1543,13 @@ function showDiscordProfile(userData) {
             this.src = 'https://picsum.photos/seed/discord-avatar/64/64.jpg';
         };
         
-        // Update account page avatar - use same approach as sidebar
-        const accountAvatarUrl = avatarUrl.replace('size=64', 'size=120');
-        console.log('Account avatar URL:', accountAvatarUrl);
-        
-        // Force update account page avatar
+        // Update account page avatar - use exact same URL as sidebar
         const accountAvatarElement = document.getElementById('accountAvatar');
         if (accountAvatarElement) {
+            // Use same avatar URL as sidebar, just larger size
+            const accountAvatarUrl = avatarUrl.replace('size=64', 'size=120');
+            console.log('Account avatar URL:', accountAvatarUrl);
+            
             accountAvatarElement.src = accountAvatarUrl;
             accountAvatarElement.onerror = function() {
                 console.log('Account avatar failed, using fallback');
