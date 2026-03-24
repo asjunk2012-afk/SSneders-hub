@@ -1522,7 +1522,7 @@ function showDiscordProfile(userData) {
     if (userData) {
         // Construct avatar URL with fallback
         let avatarUrl;
-        if (userData.avatar && userData.avatar !== 'default_avatar') {
+        if (userData.avatar && userData.avatar !== 'default_avatar' && userData.avatar !== null) {
             // User has a custom avatar
             avatarUrl = userData.avatar.startsWith('a_') 
                 ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.gif?size=64`
@@ -1533,19 +1533,33 @@ function showDiscordProfile(userData) {
             avatarUrl = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarIndex}.png?size=64`;
         }
         
-        // Set avatar with error handling
+        console.log('Avatar URL constructed:', avatarUrl);
+        
+        // Set sidebar avatar with error handling
         avatar.src = avatarUrl;
         avatar.onerror = function() {
-            // Fallback to a default image if Discord avatar fails
+            console.log('Sidebar avatar failed, using fallback');
             this.src = 'https://picsum.photos/seed/discord-avatar/64/64.jpg';
         };
         
         // Update account page avatar (larger size)
         const accountAvatarUrl = avatarUrl.replace('size=64', 'size=120');
-        accountAvatar.src = accountAvatarUrl;
-        accountAvatar.onerror = function() {
-            this.src = 'https://picsum.photos/seed/discord-avatar/120/120.jpg';
-        };
+        console.log('Account avatar URL:', accountAvatarUrl);
+        
+        // Use a timeout to ensure DOM is ready
+        setTimeout(() => {
+            // Create a new Image object to test loading
+            const testImg = new Image();
+            testImg.onload = function() {
+                console.log('Account avatar loaded successfully');
+                accountAvatar.src = accountAvatarUrl;
+            };
+            testImg.onerror = function() {
+                console.log('Account avatar failed to load, using fallback');
+                accountAvatar.src = 'https://picsum.photos/seed/discord-avatar/120/120.jpg';
+            };
+            testImg.src = accountAvatarUrl;
+        }, 100);
         
         // Set username
         const fullUsername = `${userData.username}#${userData.discriminator}`;
