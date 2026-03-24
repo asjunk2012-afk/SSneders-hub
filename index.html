@@ -72,6 +72,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="#account" class="nav-link" data-page="account">
+                        <i class="fas fa-user"></i>
+                        <span>Your Account</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="#admin" class="nav-link" data-page="admin">
                         <i class="fas fa-cog"></i>
                         <span>Admin</span>
@@ -753,6 +759,104 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Your Account Page -->
+        <div class="page" id="account-page">
+            <div class="page-content">
+                <header class="page-header">
+                    <h1>Your Account</h1>
+                    <p>Manage your account settings and connected profiles</p>
+                </header>
+                
+                <section class="account-profile-section">
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar-container">
+                                <img id="accountAvatar" src="https://picsum.photos/seed/default-avatar/120/120.jpg" alt="Profile Avatar" class="profile-avatar">
+                                <div class="avatar-badge" id="connectionStatus">
+                                    <i class="fas fa-circle"></i>
+                                </div>
+                            </div>
+                            <div class="profile-info">
+                                <h2 id="accountName">Guest User</h2>
+                                <p id="accountStatus">Not connected to Discord</p>
+                                <div class="profile-actions">
+                                    <button class="btn btn-primary" id="connectDiscordBtn" onclick="signInWithDiscord()">
+                                        <i class="fab fa-discord"></i>
+                                        Connect Discord
+                                    </button>
+                                    <button class="btn btn-secondary" id="disconnectDiscordBtn" onclick="signOutDiscord()" style="display: none;">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                        Disconnect
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="account-details-section">
+                    <div class="details-grid">
+                        <div class="detail-card">
+                            <h3><i class="fas fa-user-circle"></i> Profile Information</h3>
+                            <div class="detail-content">
+                                <div class="detail-item">
+                                    <label>Username:</label>
+                                    <span id="detailUsername">Not connected</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>User ID:</label>
+                                    <span id="detailUserId">Not available</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Email:</label>
+                                    <span id="detailEmail">Not available</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Account Status:</label>
+                                    <span id="detailStatus">Guest</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-card">
+                            <h3><i class="fas fa-shield-alt"></i> Privacy Settings</h3>
+                            <div class="detail-content">
+                                <div class="setting-item">
+                                    <label>Show Profile Publicly</label>
+                                    <input type="checkbox" id="publicProfile" disabled>
+                                </div>
+                                <div class="setting-item">
+                                    <label>Allow Direct Messages</label>
+                                    <input type="checkbox" id="allowDMs" disabled>
+                                </div>
+                                <div class="setting-item">
+                                    <label>Show Online Status</label>
+                                    <input type="checkbox" id="showStatus" disabled>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="account-actions-section">
+                    <div class="actions-grid">
+                        <button class="btn btn-outline" onclick="exportAccountData()">
+                            <i class="fas fa-download"></i>
+                            Export Data
+                        </button>
+                        <button class="btn btn-outline" onclick="clearAccountData()">
+                            <i class="fas fa-trash"></i>
+                            Clear Local Data
+                        </button>
+                        <button class="btn btn-outline" onclick="refreshAccountData()">
+                            <i class="fas fa-sync"></i>
+                            Refresh Profile
+                        </button>
                     </div>
                 </section>
             </div>

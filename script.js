@@ -1396,24 +1396,31 @@ function signInWithDiscord() {
     const clientId = '1486105329090429120';
     const redirectUri = encodeURIComponent('https://asjunk2012-afk.github.io/SSneders-hub/');
     const scope = 'identify email';
-    const authUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scope}`;
+    const responseType = 'token'; // Use implicit grant for frontend-only
+    
+    const authUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&response_type=${responseType}&redirect_uri=${redirectUri}&scope=${scope}`;
     
     // Store the auth state to check when user returns
     sessionStorage.setItem('discordAuthState', 'pending');
-    window.open(authUrl, '_blank');
-    
-    // Check for auth callback
-    setTimeout(checkDiscordAuth, 1000);
+    window.location.href = authUrl; // Redirect instead of popup
 }
 
 function checkDiscordAuth() {
-    // Check if we have Discord auth data in URL params or storage
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
+    // Check URL hash for access token (implicit grant)
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get('access_token');
+    const error = params.get('error');
     
-    if (code) {
-        // Exchange code for token and get user info
-        exchangeDiscordCode(code);
+    if (error) {
+        console.error('Discord auth error:', error);
+        sessionStorage.removeItem('discordAuthState');
+        return;
+    }
+    
+    if (accessToken) {
+        // Get user data with the access token
+        getDiscordUser(accessToken);
         // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (sessionStorage.getItem('discordAuthState') === 'pending') {
@@ -1422,56 +1429,36 @@ function checkDiscordAuth() {
     }
 }
 
-async function exchangeDiscordCode(code) {
+async function getDiscordUser(accessToken) {
     try {
-        // Exchange the authorization code for an access token
-        const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
-            method: 'POST',
+        const userResponse = await fetch('https://discord.com/api/users/@me', {
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                client_id: '1486105329090429120',
-                client_secret: 'YOUR_CLIENT_SECRET', // You'll need to add this
-                grant_type: 'authorization_code',
-                code: code,
-                redirect_uri: 'https://asjunk2012-afk.github.io/SSneders-hub/'
-            })
+                'Authorization': `Bearer ${accessToken}`
+            }
         });
         
-        const tokenData = await tokenResponse.json();
+        const userData = await userResponse.json();
         
-        if (tokenData.access_token) {
-            // Get user data with the access token
-            const userResponse = await fetch('https://discord.com/api/users/@me', {
-                headers: {
-                    'Authorization': `Bearer ${tokenData.access_token}`
-                }
-            });
-            
-            const userData = await userResponse.json();
-            
-            // Store user data
-            localStorage.setItem('discordUser', JSON.stringify(userData));
-            
-            // Update UI
-            showDiscordProfile(userData);
-            
-            // Clear auth state
-            sessionStorage.removeItem('discordAuthState');
-        }
+        // Store user data
+        localStorage.setItem('discordUser', JSON.stringify(userData));
+        
+        // Update UI
+        showDiscordProfile(userData);
+        
+        // Clear auth state
+        sessionStorage.removeItem('discordAuthState');
         
     } catch (error) {
-        console.error('Discord auth error:', error);
-        // Fallback to demo data for now
-        const fallbackData = await simulateDiscordAuth(code);
+        console.error('Discord user fetch error:', error);
+        // Fallback to demo data
+        const fallbackData = await simulateDiscordAuth();
         localStorage.setItem('discordUser', JSON.stringify(fallbackData));
         showDiscordProfile(fallbackData);
         sessionStorage.removeItem('discordAuthState');
     }
 }
 
-async function simulateDiscordAuth(code) {
+async function simulateDiscordAuth() {
     // Simulate Discord API response with better demo data
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -1479,7 +1466,7 @@ async function simulateDiscordAuth(code) {
                 id: '123456789012345678',
                 username: 'DemoUser',
                 discriminator: '1234',
-                avatar: 'default_avatar', // Use default avatar for demo
+                avatar: null, // No custom avatar, will use default
                 email: 'demo@example.com',
                 verified: true
             });
@@ -1492,6 +1479,20 @@ function showDiscordProfile(userData) {
     const userProfile = document.getElementById('discordUserProfile');
     const avatar = document.getElementById('discordAvatar');
     const username = document.getElementById('discordUsername');
+    
+    // Also update account page elements
+    const accountAvatar = document.getElementById('accountAvatar');
+    const accountName = document.getElementById('accountName');
+    const accountStatus = document.getElementById('accountStatus');
+    const connectBtn = document.getElementById('connectDiscordBtn');
+    const disconnectBtn = document.getElementById('disconnectDiscordBtn');
+    const connectionBadge = document.getElementById('connectionStatus');
+    
+    // Update detail elements
+    const detailUsername = document.getElementById('detailUsername');
+    const detailUserId = document.getElementById('detailUserId');
+    const detailEmail = document.getElementById('detailEmail');
+    const detailStatus = document.getElementById('detailStatus');
     
     if (userData) {
         // Construct avatar URL with fallback
@@ -1514,12 +1515,40 @@ function showDiscordProfile(userData) {
             this.src = 'https://picsum.photos/seed/discord-avatar/64/64.jpg';
         };
         
-        // Set username
-        username.textContent = `${userData.username}#${userData.discriminator}`;
+        // Update account page avatar (larger size)
+        const accountAvatarUrl = avatarUrl.replace('size=64', 'size=120');
+        accountAvatar.src = accountAvatarUrl;
+        accountAvatar.onerror = function() {
+            this.src = 'https://picsum.photos/seed/discord-avatar/120/120.jpg';
+        };
         
-        // Show profile, hide sign-in button
+        // Set username
+        const fullUsername = `${userData.username}#${userData.discriminator}`;
+        username.textContent = fullUsername;
+        accountName.textContent = userData.username;
+        detailUsername.textContent = fullUsername;
+        
+        // Update status
+        accountStatus.textContent = 'Connected to Discord';
+        detailStatus.textContent = 'Discord User';
+        connectionBadge.classList.remove('disconnected');
+        
+        // Update other details
+        detailUserId.textContent = userData.id;
+        detailEmail.textContent = userData.email || 'Not available';
+        
+        // Show profile, hide sign-in button (sidebar)
         signInBtn.style.display = 'none';
         userProfile.style.display = 'flex';
+        
+        // Update account page buttons
+        connectBtn.style.display = 'none';
+        disconnectBtn.style.display = 'flex';
+        
+        // Enable privacy settings
+        document.getElementById('publicProfile').disabled = false;
+        document.getElementById('allowDMs').disabled = false;
+        document.getElementById('showStatus').disabled = false;
         
         console.log('Discord profile displayed:', userData);
     }
@@ -1528,11 +1557,77 @@ function showDiscordProfile(userData) {
 function signOutDiscord() {
     localStorage.removeItem('discordUser');
     
+    // Update sidebar
     const signInBtn = document.getElementById('discordSignInBtn');
     const userProfile = document.getElementById('discordUserProfile');
-    
     signInBtn.style.display = 'flex';
     userProfile.style.display = 'none';
+    
+    // Reset account page
+    const accountAvatar = document.getElementById('accountAvatar');
+    const accountName = document.getElementById('accountName');
+    const accountStatus = document.getElementById('accountStatus');
+    const connectBtn = document.getElementById('connectDiscordBtn');
+    const disconnectBtn = document.getElementById('disconnectDiscordBtn');
+    const connectionBadge = document.getElementById('connectionStatus');
+    
+    accountAvatar.src = 'https://picsum.photos/seed/default-avatar/120/120.jpg';
+    accountName.textContent = 'Guest User';
+    accountStatus.textContent = 'Not connected to Discord';
+    connectBtn.style.display = 'flex';
+    disconnectBtn.style.display = 'none';
+    connectionBadge.classList.add('disconnected');
+    
+    // Reset detail elements
+    document.getElementById('detailUsername').textContent = 'Not connected';
+    document.getElementById('detailUserId').textContent = 'Not available';
+    document.getElementById('detailEmail').textContent = 'Not available';
+    document.getElementById('detailStatus').textContent = 'Guest';
+    
+    // Disable privacy settings
+    document.getElementById('publicProfile').disabled = true;
+    document.getElementById('allowDMs').disabled = true;
+    document.getElementById('showStatus').disabled = true;
+}
+
+// Account page utility functions
+function exportAccountData() {
+    const userData = localStorage.getItem('discordUser');
+    if (userData) {
+        const dataStr = JSON.stringify(JSON.parse(userData), null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'discord-account-data.json';
+        link.click();
+        URL.revokeObjectURL(url);
+    } else {
+        alert('No account data to export. Please connect your Discord account first.');
+    }
+}
+
+function clearAccountData() {
+    if (confirm('Are you sure you want to clear all local account data? This will sign you out.')) {
+        signOutDiscord();
+        alert('Account data cleared successfully.');
+    }
+}
+
+function refreshAccountData() {
+    const userData = localStorage.getItem('discordUser');
+    if (userData) {
+        try {
+            const data = JSON.parse(userData);
+            showDiscordProfile(data);
+            alert('Account data refreshed successfully.');
+        } catch (error) {
+            console.error('Error refreshing account data:', error);
+            alert('Error refreshing account data. Please try signing in again.');
+        }
+    } else {
+        alert('No account data to refresh. Please connect your Discord account first.');
+    }
 }
 
 // Check for existing Discord session on page load
@@ -1546,4 +1641,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error parsing stored Discord user:', error);
         }
     }
+    
+    // Check for Discord auth callback on page load
+    checkDiscordAuth();
 });
