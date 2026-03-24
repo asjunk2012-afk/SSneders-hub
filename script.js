@@ -1534,7 +1534,6 @@ function showDiscordProfile(userData) {
         }
         
         console.log('Avatar URL constructed:', avatarUrl);
-        console.log('User data:', userData);
         
         // Set sidebar avatar with error handling
         avatar.src = avatarUrl;
@@ -1543,13 +1542,13 @@ function showDiscordProfile(userData) {
             this.src = 'https://picsum.photos/seed/discord-avatar/64/64.jpg';
         };
         
-        // Update account page avatar - use exact same URL as sidebar
+        // Update account page avatar - use same approach as sidebar
+        const accountAvatarUrl = avatarUrl.replace('size=64', 'size=120');
+        console.log('Account avatar URL:', accountAvatarUrl);
+        
+        // Force update account page avatar
         const accountAvatarElement = document.getElementById('accountAvatar');
         if (accountAvatarElement) {
-            // Use same avatar URL as sidebar, just larger size
-            const accountAvatarUrl = avatarUrl.replace('size=64', 'size=120');
-            console.log('Account avatar URL:', accountAvatarUrl);
-            
             accountAvatarElement.src = accountAvatarUrl;
             accountAvatarElement.onerror = function() {
                 console.log('Account avatar failed, using fallback');
@@ -1668,8 +1667,165 @@ function refreshAccountData() {
     }
 }
 
-// Check for existing Discord session on page load
+// Roblox Account Functions (Separate from Discord)
+function linkRobloxAccount() {
+    // Create a modal for Roblox username input
+    const robloxModal = document.createElement('div');
+    robloxModal.innerHTML = `
+        <div class="modal" id="robloxModal" style="display: flex;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Link Roblox Account</h3>
+                    <button class="close-btn" onclick="closeRobloxModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="robloxUsername">Roblox Username</label>
+                        <input type="text" id="robloxUsername" placeholder="Enter your Roblox username" maxlength="20">
+                        <small>Must be 3-20 characters with letters, numbers, and underscores only</small>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="verifyAccount">
+                            I want to verify my Roblox account (optional)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeRobloxModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitRobloxLink()">Link Account</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(robloxModal);
+    
+    // Focus on username input
+    setTimeout(() => {
+        document.getElementById('robloxUsername').focus();
+    }, 100);
+}
+
+function closeRobloxModal() {
+    const modal = document.getElementById('robloxModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function submitRobloxLink() {
+    const username = document.getElementById('robloxUsername').value.trim();
+    const verifyAccount = document.getElementById('verifyAccount').checked;
+    
+    if (!username) {
+        alert('Please enter a Roblox username');
+        return;
+    }
+    
+    // Validate username
+    if (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+        alert('Invalid Roblox username. Must be 3-20 characters with letters, numbers, and underscores only.');
+        return;
+    }
+    
+    // Create Roblox account data
+    const robloxData = {
+        username: username,
+        userId: generateRobloxUserId(),
+        linkedAt: new Date().toISOString(),
+        verified: verifyAccount,
+        profileImage: `https://www.roblox.com/headshot-thumbnail/image?userId=${generateRobloxUserId()}&width=150&height=150&format=png`
+    };
+    
+    // Store Roblox data separately from Discord
+    localStorage.setItem('robloxAccount', JSON.stringify(robloxData));
+    
+    // Update UI
+    showRobloxProfile(robloxData);
+    updateAccountConnections();
+    
+    // Close modal
+    closeRobloxModal();
+    
+    // Show success message
+    if (verifyAccount) {
+        alert(`Roblox account "${username}" linked successfully! Verification steps will be shown in your profile.`);
+    } else {
+        alert(`Roblox account "${username}" linked successfully!`);
+    }
+}
+
+function unlinkRobloxAccount() {
+    if (confirm('Are you sure you want to unlink your Roblox account?')) {
+        localStorage.removeItem('robloxAccount');
+        
+        // Reset UI
+        const connectBtn = document.getElementById('connectRobloxBtn');
+        const disconnectBtn = document.getElementById('disconnectRobloxBtn');
+        
+        if (connectBtn) connectBtn.style.display = 'flex';
+        if (disconnectBtn) disconnectBtn.style.display = 'none';
+        
+        // Update account connections
+        updateAccountConnections();
+        
+        alert('Roblox account unlinked successfully.');
+    }
+}
+
+function showRobloxProfile(robloxData) {
+    const connectBtn = document.getElementById('connectRobloxBtn');
+    const disconnectBtn = document.getElementById('disconnectRobloxBtn');
+    
+    if (robloxData && connectBtn && disconnectBtn) {
+        connectBtn.style.display = 'none';
+        disconnectBtn.style.display = 'flex';
+    }
+}
+
+function generateRobloxUserId() {
+    // Generate a realistic Roblox user ID (between 1-2 billion)
+    return Math.floor(Math.random() * 1999999999) + 1;
+}
+
+function updateAccountConnections() {
+    const discordUser = localStorage.getItem('discordUser');
+    const robloxAccount = localStorage.getItem('robloxAccount');
+    const accountStatus = document.getElementById('accountStatus');
+    
+    let statusText = 'Not connected';
+    if (discordUser && robloxAccount) {
+        statusText = 'Connected to Discord and Roblox';
+    } else if (discordUser) {
+        statusText = 'Connected to Discord';
+    } else if (robloxAccount) {
+        statusText = 'Connected to Roblox';
+    }
+    
+    if (accountStatus) {
+        accountStatus.textContent = statusText;
+    }
+    
+    // Update connected accounts display
+    updateConnectedAccountsDisplay();
+}
+
+function updateConnectedAccountsDisplay() {
+    const discordUser = localStorage.getItem('discordUser');
+    const robloxAccount = localStorage.getItem('robloxAccount');
+    
+    // You can add a section to display connected accounts
+    console.log('Connected accounts updated:', {
+        discord: discordUser ? JSON.parse(discordUser).username : null,
+        roblox: robloxAccount ? JSON.parse(robloxAccount).username : null
+    });
+}
+
+// Check for existing accounts on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Check Discord (existing code)
     const storedUser = localStorage.getItem('discordUser');
     if (storedUser) {
         try {
@@ -1677,15 +1833,27 @@ document.addEventListener('DOMContentLoaded', () => {
             showDiscordProfile(userData);
         } catch (error) {
             console.error('Error parsing stored Discord user:', error);
-            // Reset to guest state if data is corrupted
             resetAccountPage();
         }
     } else {
-        // Initialize account page in guest state
         resetAccountPage();
     }
     
-    // Check for Discord auth callback on page load
+    // Check for Roblox account (separate from Discord)
+    const storedRobloxAccount = localStorage.getItem('robloxAccount');
+    if (storedRobloxAccount) {
+        try {
+            const robloxData = JSON.parse(storedRobloxAccount);
+            showRobloxProfile(robloxData);
+        } catch (error) {
+            console.error('Error parsing stored Roblox account:', error);
+        }
+    }
+    
+    // Update overall connections
+    updateAccountConnections();
+    
+    // Check for Discord auth callback
     checkDiscordAuth();
 });
 
