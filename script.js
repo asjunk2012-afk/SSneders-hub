@@ -1424,38 +1424,66 @@ function checkDiscordAuth() {
 
 async function exchangeDiscordCode(code) {
     try {
-        // In a real implementation, you'd send this to your backend
-        // For demo purposes, we'll simulate getting user data
-        const userData = await simulateDiscordAuth(code);
+        // Exchange the authorization code for an access token
+        const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                client_id: '1486105329090429120',
+                client_secret: 'YOUR_CLIENT_SECRET', // You'll need to add this
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: 'https://asjunk2012-afk.github.io/SSneders-hub/'
+            })
+        });
         
-        // Store user data
-        localStorage.setItem('discordUser', JSON.stringify(userData));
+        const tokenData = await tokenResponse.json();
         
-        // Update UI
-        showDiscordProfile(userData);
-        
-        // Clear auth state
-        sessionStorage.removeItem('discordAuthState');
+        if (tokenData.access_token) {
+            // Get user data with the access token
+            const userResponse = await fetch('https://discord.com/api/users/@me', {
+                headers: {
+                    'Authorization': `Bearer ${tokenData.access_token}`
+                }
+            });
+            
+            const userData = await userResponse.json();
+            
+            // Store user data
+            localStorage.setItem('discordUser', JSON.stringify(userData));
+            
+            // Update UI
+            showDiscordProfile(userData);
+            
+            // Clear auth state
+            sessionStorage.removeItem('discordAuthState');
+        }
         
     } catch (error) {
         console.error('Discord auth error:', error);
+        // Fallback to demo data for now
+        const fallbackData = await simulateDiscordAuth(code);
+        localStorage.setItem('discordUser', JSON.stringify(fallbackData));
+        showDiscordProfile(fallbackData);
         sessionStorage.removeItem('discordAuthState');
     }
 }
 
 async function simulateDiscordAuth(code) {
-    // Simulate Discord API response
-    // In production, this would be a real API call to Discord
+    // Simulate Discord API response with better demo data
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve({
-                id: '123456789',
+                id: '123456789012345678',
                 username: 'DemoUser',
                 discriminator: '1234',
-                avatar: 'a_' + Math.random().toString(36).substring(7),
-                email: 'demo@example.com'
+                avatar: 'default_avatar', // Use default avatar for demo
+                email: 'demo@example.com',
+                verified: true
             });
-        }, 1000);
+        }, 500);
     });
 }
 
@@ -1466,16 +1494,34 @@ function showDiscordProfile(userData) {
     const username = document.getElementById('discordUsername');
     
     if (userData) {
-        // Construct avatar URL
-        const avatarUrl = userData.avatar.startsWith('a_') 
-            ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.gif`
-            : `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`;
+        // Construct avatar URL with fallback
+        let avatarUrl;
+        if (userData.avatar && userData.avatar !== 'default_avatar') {
+            // User has a custom avatar
+            avatarUrl = userData.avatar.startsWith('a_') 
+                ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.gif?size=64`
+                : `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png?size=64`;
+        } else {
+            // Use default avatar
+            const defaultAvatarIndex = parseInt(userData.discriminator) % 5;
+            avatarUrl = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarIndex}.png?size=64`;
+        }
         
+        // Set avatar with error handling
         avatar.src = avatarUrl;
+        avatar.onerror = function() {
+            // Fallback to a default image if Discord avatar fails
+            this.src = 'https://picsum.photos/seed/discord-avatar/64/64.jpg';
+        };
+        
+        // Set username
         username.textContent = `${userData.username}#${userData.discriminator}`;
         
+        // Show profile, hide sign-in button
         signInBtn.style.display = 'none';
         userProfile.style.display = 'flex';
+        
+        console.log('Discord profile displayed:', userData);
     }
 }
 
