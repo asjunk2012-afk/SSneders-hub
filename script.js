@@ -1546,11 +1546,18 @@ function showDiscordProfile(userData) {
         const accountAvatarUrl = avatarUrl.replace('size=64', 'size=120');
         console.log('Account avatar URL:', accountAvatarUrl);
         
-        accountAvatar.src = accountAvatarUrl;
-        accountAvatar.onerror = function() {
-            console.log('Account avatar failed, using fallback');
-            this.src = 'https://picsum.photos/seed/discord-avatar/120/120.jpg';
-        };
+        // Force update account page avatar
+        const accountAvatarElement = document.getElementById('accountAvatar');
+        if (accountAvatarElement) {
+            accountAvatarElement.src = accountAvatarUrl;
+            accountAvatarElement.onerror = function() {
+                console.log('Account avatar failed, using fallback');
+                this.src = 'https://picsum.photos/seed/discord-avatar/120/120.jpg';
+            };
+            console.log('Account avatar element found and updated');
+        } else {
+            console.error('Account avatar element not found!');
+        }
         
         // Set username
         const fullUsername = `${userData.username}#${userData.discriminator}`;
