@@ -72,12 +72,6 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#link-accounts" class="nav-link" data-page="link-accounts">
-                        <i class="fas fa-link"></i>
-                        <span>Link Accounts</span>
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a href="#admin" class="nav-link" data-page="admin">
                         <i class="fas fa-cog"></i>
                         <span>Admin</span>
@@ -88,6 +82,19 @@
         
         <div class="sidebar-footer">
             <!-- Sidebar is now always visible -->
+            <div id="discordAuth">
+                <button class="btn btn-discord" id="discordSignInBtn" onclick="signInWithDiscord()">
+                    <i class="fab fa-discord"></i>
+                    Sign in with Discord
+                </button>
+                <div id="discordUserProfile" style="display: none;">
+                    <img id="discordAvatar" src="" alt="Discord Avatar">
+                    <span id="discordUsername"></span>
+                    <button class="btn btn-signout" id="discordSignOutBtn" onclick="signOutDiscord()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
         </div>
     </aside>
 
@@ -764,26 +771,7 @@
                         <div class="account-category">
                             <h3><i class="fas fa-gamepad"></i> Gaming Accounts</h3>
                             <div class="account-grid">
-                                <div class="account-item">
-                                    <div class="account-icon discord">
-                                        <i class="fab fa-discord"></i>
-                                    </div>
-                                    <div class="account-info">
-                                        <h4>Discord</h4>
-                                        <p>Connect your Discord account</p>
-                                        <button class="btn btn-primary btn-sm">Connect</button>
-                                    </div>
-                                </div>
-                                <div class="account-item">
-                                    <div class="account-icon roblox">
-                                        <i class="fab fa-roblox"></i>
-                                    </div>
-                                    <div class="account-info">
-                                        <h4>Roblox</h4>
-                                        <p>Connect your Roblox account</p>
-                                        <button class="btn btn-primary btn-sm">Connect</button>
-                                    </div>
-                                </div>
+                                <!-- Account linking options removed -->
                             </div>
                         </div>
                     </div>

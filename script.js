@@ -270,8 +270,8 @@ async function sendToDiscordWebhook(idea) {
     
     const payload = {
         embeds: [embed],
-        username: 'SSneder\'s Hub Bot',
-        avatar_url: 'https://i.imgur.com/bot-avatar.png' // You can replace with bot avatar
+        username: 'SSneders video idea bot',
+        avatar_url: 'https://cdn.discordapp.com/attachments/1485732637002694656/1486102203122061392/discord-bot-avatar.png.png?ex=69c44807&is=69c2f687&hm=fcbbae828d143308b54d6853eba5b45e14ae9af139b3a7b4b00bc37197fd73bb&'
     };
     
     const response = await fetch(webhookUrl, {
@@ -287,6 +287,24 @@ async function sendToDiscordWebhook(idea) {
     }
     
     console.log('Video idea sent to Discord successfully');
+}
+
+// Test function for Discord webhook
+async function testDiscordWebhook() {
+    const testIdea = {
+        title: 'Test Video Idea - Bot Testing',
+        category: 'gaming',
+        description: 'This is a test video idea to verify the Discord webhook is working properly with the new bot name and avatar.',
+        submitterName: 'Test User',
+        timestamp: Date.now()
+    };
+    
+    try {
+        await sendToDiscordWebhook(testIdea);
+        console.log('Test webhook sent successfully!');
+    } catch (error) {
+        console.error('Test webhook failed:', error);
+    }
 }
 async function handleVideoIdeaForm(e) {
     e.preventDefault();
@@ -1370,5 +1388,116 @@ document.addEventListener('DOMContentLoaded', function() {
             setupLinkAccountsPage();
             loadConnectedAccounts();
         }, 100);
+    }
+});
+
+// Discord OAuth Functions
+function signInWithDiscord() {
+    const clientId = '1486105329090429120';
+    const redirectUri = encodeURIComponent('https://asjunk2012-afk.github.io/SSneders-hub/');
+    const scope = 'identify email';
+    const authUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scope}`;
+    
+    // Store the auth state to check when user returns
+    sessionStorage.setItem('discordAuthState', 'pending');
+    window.open(authUrl, '_blank');
+    
+    // Check for auth callback
+    setTimeout(checkDiscordAuth, 1000);
+}
+
+function checkDiscordAuth() {
+    // Check if we have Discord auth data in URL params or storage
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    
+    if (code) {
+        // Exchange code for token and get user info
+        exchangeDiscordCode(code);
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (sessionStorage.getItem('discordAuthState') === 'pending') {
+        // Keep checking
+        setTimeout(checkDiscordAuth, 1000);
+    }
+}
+
+async function exchangeDiscordCode(code) {
+    try {
+        // In a real implementation, you'd send this to your backend
+        // For demo purposes, we'll simulate getting user data
+        const userData = await simulateDiscordAuth(code);
+        
+        // Store user data
+        localStorage.setItem('discordUser', JSON.stringify(userData));
+        
+        // Update UI
+        showDiscordProfile(userData);
+        
+        // Clear auth state
+        sessionStorage.removeItem('discordAuthState');
+        
+    } catch (error) {
+        console.error('Discord auth error:', error);
+        sessionStorage.removeItem('discordAuthState');
+    }
+}
+
+async function simulateDiscordAuth(code) {
+    // Simulate Discord API response
+    // In production, this would be a real API call to Discord
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve({
+                id: '123456789',
+                username: 'DemoUser',
+                discriminator: '1234',
+                avatar: 'a_' + Math.random().toString(36).substring(7),
+                email: 'demo@example.com'
+            });
+        }, 1000);
+    });
+}
+
+function showDiscordProfile(userData) {
+    const signInBtn = document.getElementById('discordSignInBtn');
+    const userProfile = document.getElementById('discordUserProfile');
+    const avatar = document.getElementById('discordAvatar');
+    const username = document.getElementById('discordUsername');
+    
+    if (userData) {
+        // Construct avatar URL
+        const avatarUrl = userData.avatar.startsWith('a_') 
+            ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.gif`
+            : `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`;
+        
+        avatar.src = avatarUrl;
+        username.textContent = `${userData.username}#${userData.discriminator}`;
+        
+        signInBtn.style.display = 'none';
+        userProfile.style.display = 'flex';
+    }
+}
+
+function signOutDiscord() {
+    localStorage.removeItem('discordUser');
+    
+    const signInBtn = document.getElementById('discordSignInBtn');
+    const userProfile = document.getElementById('discordUserProfile');
+    
+    signInBtn.style.display = 'flex';
+    userProfile.style.display = 'none';
+}
+
+// Check for existing Discord session on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const storedUser = localStorage.getItem('discordUser');
+    if (storedUser) {
+        try {
+            const userData = JSON.parse(storedUser);
+            showDiscordProfile(userData);
+        } catch (error) {
+            console.error('Error parsing stored Discord user:', error);
+        }
     }
 });
