@@ -1542,24 +1542,15 @@ function showDiscordProfile(userData) {
             this.src = 'https://picsum.photos/seed/discord-avatar/64/64.jpg';
         };
         
-        // Update account page avatar (larger size)
+        // Update account page avatar - use same approach as sidebar
         const accountAvatarUrl = avatarUrl.replace('size=64', 'size=120');
         console.log('Account avatar URL:', accountAvatarUrl);
         
-        // Use a timeout to ensure DOM is ready
-        setTimeout(() => {
-            // Create a new Image object to test loading
-            const testImg = new Image();
-            testImg.onload = function() {
-                console.log('Account avatar loaded successfully');
-                accountAvatar.src = accountAvatarUrl;
-            };
-            testImg.onerror = function() {
-                console.log('Account avatar failed to load, using fallback');
-                accountAvatar.src = 'https://picsum.photos/seed/discord-avatar/120/120.jpg';
-            };
-            testImg.src = accountAvatarUrl;
-        }, 100);
+        accountAvatar.src = accountAvatarUrl;
+        accountAvatar.onerror = function() {
+            console.log('Account avatar failed, using fallback');
+            this.src = 'https://picsum.photos/seed/discord-avatar/120/120.jpg';
+        };
         
         // Set username
         const fullUsername = `${userData.username}#${userData.discriminator}`;
