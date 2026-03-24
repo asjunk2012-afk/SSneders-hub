@@ -1431,13 +1431,20 @@ function checkDiscordAuth() {
 
 async function getDiscordUser(accessToken) {
     try {
+        console.log('Fetching Discord user with access token...');
+        
         const userResponse = await fetch('https://discord.com/api/users/@me', {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             }
         });
         
+        if (!userResponse.ok) {
+            throw new Error(`Discord API error: ${userResponse.status}`);
+        }
+        
         const userData = await userResponse.json();
+        console.log('Discord user data received:', userData);
         
         // Store user data
         localStorage.setItem('discordUser', JSON.stringify(userData));
@@ -1450,11 +1457,29 @@ async function getDiscordUser(accessToken) {
         
     } catch (error) {
         console.error('Discord user fetch error:', error);
-        // Fallback to demo data
-        const fallbackData = await simulateDiscordAuth();
-        localStorage.setItem('discordUser', JSON.stringify(fallbackData));
-        showDiscordProfile(fallbackData);
+        console.error('This might be due to CORS issues or invalid token');
+        
+        // For demo purposes, create realistic demo data
+        const demoData = {
+            id: '123456789012345678',
+            username: 'DemoUser',
+            discriminator: '1234',
+            avatar: null,
+            email: 'demo@example.com',
+            verified: true
+        };
+        
+        console.log('Using demo data due to API error:', demoData);
+        
+        // Store demo data
+        localStorage.setItem('discordUser', JSON.stringify(demoData));
+        showDiscordProfile(demoData);
         sessionStorage.removeItem('discordAuthState');
+        
+        // Show user a message about demo mode
+        setTimeout(() => {
+            alert('Using demo data due to Discord API restrictions. In production, this would show your actual Discord profile.');
+        }, 1000);
     }
 }
 
@@ -1639,9 +1664,42 @@ document.addEventListener('DOMContentLoaded', () => {
             showDiscordProfile(userData);
         } catch (error) {
             console.error('Error parsing stored Discord user:', error);
+            // Reset to guest state if data is corrupted
+            resetAccountPage();
         }
+    } else {
+        // Initialize account page in guest state
+        resetAccountPage();
     }
     
     // Check for Discord auth callback on page load
     checkDiscordAuth();
 });
+
+// Reset account page to guest state
+function resetAccountPage() {
+    const accountAvatar = document.getElementById('accountAvatar');
+    const accountName = document.getElementById('accountName');
+    const accountStatus = document.getElementById('accountStatus');
+    const connectBtn = document.getElementById('connectDiscordBtn');
+    const disconnectBtn = document.getElementById('disconnectDiscordBtn');
+    const connectionBadge = document.getElementById('connectionStatus');
+    
+    accountAvatar.src = 'https://picsum.photos/seed/default-avatar/120/120.jpg';
+    accountName.textContent = 'Guest User';
+    accountStatus.textContent = 'Not connected to Discord';
+    connectBtn.style.display = 'flex';
+    disconnectBtn.style.display = 'none';
+    connectionBadge.classList.add('disconnected');
+    
+    // Reset detail elements
+    document.getElementById('detailUsername').textContent = 'Not connected';
+    document.getElementById('detailUserId').textContent = 'Not available';
+    document.getElementById('detailEmail').textContent = 'Not available';
+    document.getElementById('detailStatus').textContent = 'Guest';
+    
+    // Disable privacy settings
+    document.getElementById('publicProfile').disabled = true;
+    document.getElementById('allowDMs').disabled = true;
+    document.getElementById('showStatus').disabled = true;
+}
