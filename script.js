@@ -342,15 +342,17 @@ async function testDiscordWebhook() {
 }
 async function handleVideoIdeaForm(e) {
     e.preventDefault();
+    console.log('Form submission started'); // Debug log
     
     // Prevent multiple submissions
     const submitBtn = e.target.querySelector('button[type="submit"]');
     if (submitBtn.disabled) {
+        console.log('Button already disabled, returning'); // Debug log
         return; // Already submitting
     }
     
     const formData = new FormData(e.target);
-    const idea = {
+    let idea = {
         title: formData.get('ideaTitle').trim(),
         category: formData.get('ideaCategory'),
         description: formData.get('ideaDescription').trim(),
@@ -358,17 +360,34 @@ async function handleVideoIdeaForm(e) {
         timestamp: Date.now()
     };
     
+    console.log('Form data collected:', idea); // Debug log
+    
+    // Validate form data first
+    if (!idea.title || !idea.description || !idea.category) {
+        console.log('Validation failed'); // Debug log
+        showNotification('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    // Check if user is logged in with Discord and override name field
+    const discordUser = localStorage.getItem('discordUser');
+    if (discordUser) {
+        try {
+            const userData = JSON.parse(discordUser);
+            idea.submitterName = `${userData.username}#${userData.discriminator}`;
+            console.log('Using Discord user:', idea.submitterName); // Debug log
+        } catch (error) {
+            console.error('Error parsing Discord user data:', error);
+            // Keep manual name if Discord data is invalid
+        }
+    }
+    
     // Disable submit button and show loading state
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
     
     try {
-        // Validate form data
-        if (!idea.title || !idea.description || !idea.category) {
-            showNotification('Please fill in all required fields', 'error');
-            return;
-        }
-        
+        console.log('Attempting to submit to API...'); // Debug log
         // Save to online database
         const response = await fetch(`${API_BASE_URL}/video-ideas`, {
             method: 'POST',
@@ -380,6 +399,7 @@ async function handleVideoIdeaForm(e) {
         
         if (response.ok) {
             const result = await response.json();
+            console.log('API submission successful'); // Debug log
             
             // Send to Discord webhook
             await sendToDiscordWebhook(idea);
@@ -424,6 +444,7 @@ async function handleVideoIdeaForm(e) {
         // Re-enable submit button
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Idea';
+        console.log('Form submission completed'); // Debug log
     }
 }
 
