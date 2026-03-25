@@ -231,6 +231,36 @@ async function sendToDiscordWebhook(idea) {
     const emoji = categoryEmojis[idea.category] || '💡';
     const categoryLabel = idea.category.charAt(0).toUpperCase() + idea.category.slice(1);
     
+    // Check if user is logged in with Discord
+    const discordUser = localStorage.getItem('discordUser');
+    let submitterInfo;
+    
+    if (discordUser) {
+        try {
+            const userData = JSON.parse(discordUser);
+            const avatarUrl = userData.avatar 
+                ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png?size=64`
+                : `https://cdn.discordapp.com/embed/avatars/${parseInt(userData.discriminator) % 5}.png?size=64`;
+            
+            submitterInfo = {
+                name: `${userData.username}#${userData.discriminator}`,
+                icon_url: avatarUrl,
+                id: userData.id
+            };
+        } catch (error) {
+            console.error('Error parsing Discord user data:', error);
+            submitterInfo = {
+                name: idea.submitterName || 'Anonymous',
+                icon_url: null
+            };
+        }
+    } else {
+        submitterInfo = {
+            name: idea.submitterName || 'Anonymous',
+            icon_url: null
+        };
+    }
+    
     const embed = {
         title: `${emoji} New Video Idea Submitted!`,
         color: 0xFF69B4, // Pink color to match your site theme
@@ -247,7 +277,7 @@ async function sendToDiscordWebhook(idea) {
             },
             {
                 name: '👤 Submitted By',
-                value: idea.submitterName || 'Anonymous',
+                value: submitterInfo.name,
                 inline: true
             },
             {
@@ -261,6 +291,10 @@ async function sendToDiscordWebhook(idea) {
                 inline: true
             }
         ],
+        author: submitterInfo.icon_url ? {
+            name: submitterInfo.name,
+            icon_url: submitterInfo.icon_url
+        } : null,
         footer: {
             text: 'SSneder\'s Hub - Video Ideas',
             icon_url: 'https://i.imgur.com/your-logo.png' // You can replace with your logo
@@ -1474,6 +1508,42 @@ async function simulateDiscordAuth() {
     });
 }
 
+// Update video ideas form based on Discord login status
+function updateVideoIdeasForm() {
+    const discordUser = localStorage.getItem('discordUser');
+    const nameFieldGroup = document.getElementById('nameFieldGroup');
+    const nameInput = document.getElementById('submitterName');
+    const nameHint = document.getElementById('nameFieldHint');
+    
+    if (discordUser) {
+        try {
+            const userData = JSON.parse(discordUser);
+            // User is logged in with Discord
+            nameFieldGroup.classList.add('disabled');
+            nameInput.disabled = true;
+            nameInput.value = ''; // Clear any manual input
+            nameHint.textContent = `Using Discord profile: ${userData.username}#${userData.discriminator}`;
+            nameHint.style.color = '#48bb78';
+        } catch (error) {
+            console.error('Error parsing Discord user data:', error);
+            resetVideoIdeasForm();
+        }
+    } else {
+        resetVideoIdeasForm();
+    }
+}
+
+function resetVideoIdeasForm() {
+    const nameFieldGroup = document.getElementById('nameFieldGroup');
+    const nameInput = document.getElementById('submitterName');
+    const nameHint = document.getElementById('nameFieldHint');
+    
+    nameFieldGroup.classList.remove('disabled');
+    nameInput.disabled = false;
+    nameHint.textContent = '';
+}
+
+// Update the showDiscordProfile function to also update the form
 function showDiscordProfile(userData) {
     const signInBtn = document.getElementById('discordSignInBtn');
     const userProfile = document.getElementById('discordUserProfile');
@@ -1550,6 +1620,9 @@ function showDiscordProfile(userData) {
         document.getElementById('allowDMs').disabled = false;
         document.getElementById('showStatus').disabled = false;
         
+        // Update video ideas form
+        updateVideoIdeasForm();
+        
         console.log('Discord profile displayed:', userData);
     }
 }
@@ -1588,6 +1661,9 @@ function signOutDiscord() {
     document.getElementById('publicProfile').disabled = true;
     document.getElementById('allowDMs').disabled = true;
     document.getElementById('showStatus').disabled = true;
+    
+    // Update video ideas form
+    resetVideoIdeasForm();
 }
 
 // Account page utility functions
@@ -1644,4 +1720,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Check for Discord auth callback on page load
     checkDiscordAuth();
+    
+    // Initialize video ideas form
+    updateVideoIdeasForm();
 });
