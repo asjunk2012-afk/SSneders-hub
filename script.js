@@ -1431,20 +1431,13 @@ function checkDiscordAuth() {
 
 async function getDiscordUser(accessToken) {
     try {
-        console.log('Fetching Discord user with access token...');
-        
         const userResponse = await fetch('https://discord.com/api/users/@me', {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             }
         });
         
-        if (!userResponse.ok) {
-            throw new Error(`Discord API error: ${userResponse.status}`);
-        }
-        
         const userData = await userResponse.json();
-        console.log('Discord user data received:', userData);
         
         // Store user data
         localStorage.setItem('discordUser', JSON.stringify(userData));
@@ -1457,29 +1450,11 @@ async function getDiscordUser(accessToken) {
         
     } catch (error) {
         console.error('Discord user fetch error:', error);
-        console.error('This might be due to CORS issues or invalid token');
-        
-        // For demo purposes, create realistic demo data
-        const demoData = {
-            id: '123456789012345678',
-            username: 'DemoUser',
-            discriminator: '1234',
-            avatar: null,
-            email: 'demo@example.com',
-            verified: true
-        };
-        
-        console.log('Using demo data due to API error:', demoData);
-        
-        // Store demo data
-        localStorage.setItem('discordUser', JSON.stringify(demoData));
-        showDiscordProfile(demoData);
+        // Fallback to demo data
+        const fallbackData = await simulateDiscordAuth();
+        localStorage.setItem('discordUser', JSON.stringify(fallbackData));
+        showDiscordProfile(fallbackData);
         sessionStorage.removeItem('discordAuthState');
-        
-        // Show user a message about demo mode
-        setTimeout(() => {
-            alert('Using demo data due to Discord API restrictions. In production, this would show your actual Discord profile.');
-        }, 1000);
     }
 }
 
@@ -1522,7 +1497,7 @@ function showDiscordProfile(userData) {
     if (userData) {
         // Construct avatar URL with fallback
         let avatarUrl;
-        if (userData.avatar && userData.avatar !== 'default_avatar' && userData.avatar !== null) {
+        if (userData.avatar && userData.avatar !== 'default_avatar') {
             // User has a custom avatar
             avatarUrl = userData.avatar.startsWith('a_') 
                 ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.gif?size=64`
@@ -1533,32 +1508,19 @@ function showDiscordProfile(userData) {
             avatarUrl = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarIndex}.png?size=64`;
         }
         
-        console.log('Avatar URL constructed:', avatarUrl);
-        console.log('User data:', userData);
-        
-        // Set sidebar avatar with error handling
+        // Set avatar with error handling
         avatar.src = avatarUrl;
         avatar.onerror = function() {
-            console.log('Sidebar avatar failed, using fallback');
+            // Fallback to a default image if Discord avatar fails
             this.src = 'https://picsum.photos/seed/discord-avatar/64/64.jpg';
         };
         
-        // Update account page avatar - use exact same URL as sidebar
-        const accountAvatarElement = document.getElementById('accountAvatar');
-        if (accountAvatarElement) {
-            // Use same avatar URL as sidebar, just larger size, with cache buster
-            const accountAvatarUrl = avatarUrl.replace('size=64', 'size=120') + '&t=' + Date.now();
-            console.log('Account avatar URL:', accountAvatarUrl);
-            
-            accountAvatarElement.src = accountAvatarUrl;
-            accountAvatarElement.onerror = function() {
-                console.log('Account avatar failed, using fallback');
-                this.src = 'https://picsum.photos/seed/discord-avatar/120/120.jpg?t=' + Date.now();
-            };
-            console.log('Account avatar element found and updated');
-        } else {
-            console.error('Account avatar element not found!');
-        }
+        // Update account page avatar (larger size)
+        const accountAvatarUrl = avatarUrl.replace('size=64', 'size=120');
+        accountAvatar.src = accountAvatarUrl;
+        accountAvatar.onerror = function() {
+            this.src = 'https://picsum.photos/seed/discord-avatar/120/120.jpg';
+        };
         
         // Set username
         const fullUsername = `${userData.username}#${userData.discriminator}`;
@@ -1675,55 +1637,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const userData = JSON.parse(storedUser);
             showDiscordProfile(userData);
-            console.log('Found existing Discord session on this device');
         } catch (error) {
             console.error('Error parsing stored Discord user:', error);
-            // Reset to guest state if data is corrupted
-            resetAccountPage();
         }
-    } else {
-        // Initialize account page in guest state
-        resetAccountPage();
-        console.log('No Discord session found on this device');
     }
     
     // Check for Discord auth callback on page load
     checkDiscordAuth();
 });
-
-// Reset account page to guest state
-function resetAccountPage() {
-    const accountAvatar = document.getElementById('accountAvatar');
-    const accountName = document.getElementById('accountName');
-    const accountStatus = document.getElementById('accountStatus');
-    const connectBtn = document.getElementById('connectDiscordBtn');
-    const disconnectBtn = document.getElementById('disconnectDiscordBtn');
-    const connectionBadge = document.getElementById('connectionStatus');
-    
-    if (accountAvatar) accountAvatar.src = 'https://picsum.photos/seed/default-avatar/120/120.jpg';
-    if (accountName) accountName.textContent = 'Guest User';
-    if (accountStatus) accountStatus.textContent = 'Not connected to Discord';
-    if (connectBtn) connectBtn.style.display = 'flex';
-    if (disconnectBtn) disconnectBtn.style.display = 'none';
-    if (connectionBadge) connectionBadge.classList.add('disconnected');
-    
-    // Reset detail elements
-    const detailUsername = document.getElementById('detailUsername');
-    const detailUserId = document.getElementById('detailUserId');
-    const detailEmail = document.getElementById('detailEmail');
-    const detailStatus = document.getElementById('detailStatus');
-    
-    if (detailUsername) detailUsername.textContent = 'Not connected';
-    if (detailUserId) detailUserId.textContent = 'Not available';
-    if (detailEmail) detailEmail.textContent = 'Not available';
-    if (detailStatus) detailStatus.textContent = 'Guest';
-    
-    // Disable privacy settings
-    const publicProfile = document.getElementById('publicProfile');
-    const allowDMs = document.getElementById('allowDMs');
-    const showStatus = document.getElementById('showStatus');
-    
-    if (publicProfile) publicProfile.disabled = true;
-    if (allowDMs) allowDMs.disabled = true;
-    if (showStatus) showStatus.disabled = true;
-}
