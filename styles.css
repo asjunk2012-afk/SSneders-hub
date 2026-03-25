@@ -2110,28 +2110,11 @@ body {
 }
 
 .form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.1);
-}
-
-.form-hint {
-    display: block;
-    margin-top: 5px;
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-style: italic;
-}
-
-.form-group.disabled {
-    opacity: 0.6;
-}
-
-.form-group.disabled input {
-    background: var(--bg-secondary);
-    cursor: not-allowed;
 }
 
 .form-group textarea {
