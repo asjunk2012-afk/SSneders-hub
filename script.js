@@ -1516,11 +1516,19 @@ function showDiscordProfile(userData) {
         };
         
         // Update account page avatar (larger size)
-        const accountAvatarUrl = avatarUrl.replace('size=64', 'size=120');
-        accountAvatar.src = accountAvatarUrl;
-        accountAvatar.onerror = function() {
-            this.src = 'https://picsum.photos/seed/discord-avatar/120/120.jpg';
-        };
+         if (userData) {
+        // Construct avatar URL with fallback
+        let avatarUrl;
+        if (userData.avatar && userData.avatar !== 'default_avatar') {
+            // User has a custom avatar
+            avatarUrl = userData.avatar.startsWith('a_') 
+                ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.gif?size=120`
+                : `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png?size=120`;
+        } else {
+            // Use default avatar
+            const defaultAvatarIndex = parseInt(userData.discriminator) % 5;
+            avatarUrl = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarIndex}.png?size=120`;
+        }
         
         // Set username
         const fullUsername = `${userData.username}#${userData.discriminator}`;
@@ -1644,4 +1652,4 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Check for Discord auth callback on page load
     checkDiscordAuth();
-});
+});}
